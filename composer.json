@@ -50,9 +50,6 @@
         ]
     },
     "config": {
-        "platform": {
-            "php": "8.2.0"
-        },
         "allow-plugins": {
             "laminas/laminas-dependency-plugin": true,
             "laminas/laminas-component-installer": true,
