@@ -3,22 +3,17 @@
 namespace CpmsCommon\Service;
 
 use CpmsCommon\Log\LogData;
+use Monolog\Handler\HandlerInterface;
+use Monolog\Logger as MonologLogger;
 use Psr\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
-use Laminas\Log\Writer\WriterInterface;
 
 /**
  * Service factory for Common Logger
- *
- * @package       CpmsCommon
- * @subpackage    Service
- * @author        Pele Odiase <pele.odiase@valtech.co.uk>
  */
 class LoggerServiceFactory implements FactoryInterface
 {
     /**
-     * Create an object
-     *
      * @param  ContainerInterface $container
      * @param  string $requestedName
      * @param  null|array $options
@@ -28,7 +23,9 @@ class LoggerServiceFactory implements FactoryInterface
      */
     public function __invoke(ContainerInterface $container, $requestedName, array $options = null)
     {
-        $log = new LoggerService();
+        $monoLogger = new MonologLogger('cpms-common');
+        $log = new LoggerService($monoLogger);
+
         /** @var array $serviceConfig */
         $serviceConfig = $container->get('config');
         $logData = null;
@@ -39,15 +36,15 @@ class LoggerServiceFactory implements FactoryInterface
             $logData = $container->get($serviceConfig['logger']['replacement']);
         }
 
-        if ($logData and $logData instanceof LogData) {
+        if ($logData instanceof LogData) {
             $logData->setStrictMode(false);
             $log->setLogData($logData);
         }
 
         foreach ($writers as $logWriter) {
-            /** @var string|WriterInterface $writer */
-            $writer = $container->get($logWriter);
-            $log->addWriter($writer);
+            /** @var HandlerInterface $handler */
+            $handler = $container->get($logWriter);
+            $log->addHandler($handler);
         }
 
         return $log;

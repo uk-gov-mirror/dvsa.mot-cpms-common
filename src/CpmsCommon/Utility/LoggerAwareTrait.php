@@ -7,7 +7,6 @@
 namespace CpmsCommon\Utility;
 
 use CpmsCommon\Service\LoggerService;
-use Laminas\Log\Logger;
 use Laminas\ServiceManager\ServiceManager;
 
 /**
@@ -51,7 +50,7 @@ trait LoggerAwareTrait
     /**
      * Logs a message to the defined logger.
      */
-    public function log(string $message, int $priority = Logger::INFO, array $extra = array()): void
+    public function log(string $message, int $priority = LoggerService::INFO, array $extra = array()): void
     {
         $this->getLogger()->log($priority, $message, $extra);
     }

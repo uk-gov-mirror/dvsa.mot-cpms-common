@@ -4,30 +4,24 @@ namespace CpmsCommon\Log\Writer;
 
 use CpmsCommon\Log\LogDataAwareInterface;
 use CpmsCommon\Log\LogData;
+use Monolog\Formatter\FormatterInterface;
+use Monolog\Handler\StreamHandler;
+use Monolog\Level;
 use Psr\Container\ContainerInterface;
-use Laminas\Log\Filter\Priority;
-use Laminas\Log\Formatter\FormatterInterface;
-use Laminas\Log\Writer\Stream;
 use Laminas\ServiceManager\Factory\FactoryInterface;
 
 /**
- * Service factory for Stream Log Writer
- *
- * @package       CpmsCommon
- * @subpackage    Log
- * @author        Pele Odiase <pele.odiase@valtech.co.uk>
+ * Service factory for Stream Log Handler (Monolog StreamHandler)
  */
 class StreamWriterFactory implements FactoryInterface
 {
-    private array $logConfig = array();
+    private array $logConfig = [];
 
     /**
-     * Create an object
-     *
      * @param  ContainerInterface $container
      * @param  null|string $requestedName
      * @param  null|array $options
-     * @return object
+     * @return StreamHandler
      * @throws \Psr\Container\ContainerExceptionInterface
      * @throws \Psr\Container\NotFoundExceptionInterface
      */
@@ -36,11 +30,11 @@ class StreamWriterFactory implements FactoryInterface
         /** @var array $serviceConfig */
         $serviceConfig = $container->get('config');
         $this->logConfig = $serviceConfig['logger'];
-        $priority = $this->getLogPriority();
+        $level = $this->getMonologLevel();
         $filePath = $this->getFilePath();
-        $filter = new Priority($priority);
-        $fileWriter = new Stream($filePath, null, $this->logConfig['separator']);
         $logData = null;
+
+        $handler = new StreamHandler($filePath, $level);
 
         if (!empty($serviceConfig['logger']['replacement'])) {
             /** @var LogData $logData */
@@ -50,27 +44,22 @@ class StreamWriterFactory implements FactoryInterface
         if (!empty($this->logConfig['formatter'])) {
             /** @var FormatterInterface&LogDataAwareInterface $formatter */
             $formatter = $container->get($this->logConfig['formatter']);
-            $fileWriter->setFormatter($formatter);
+            $handler->setFormatter($formatter);
 
-            if ($logData and $formatter instanceof LogDataAwareInterface) {
+            if ($logData instanceof LogDataAwareInterface) {
                 $formatter->setLogData($logData);
             }
         }
 
-        $fileWriter->addFilter($filter);
-
-        return $fileWriter;
+        return $handler;
     }
 
     /**
-     * Check log location
-     *
-     * @return string
+     * Check log location and create directory if needed
      */
-    private function checkLogDirectory()
+    private function checkLogDirectory(): string
     {
-        //create log directory if set but does not exists
-        if (isset($this->logConfig['location']) and !\file_exists($this->logConfig['location'])) {
+        if (isset($this->logConfig['location']) && !\file_exists($this->logConfig['location'])) {
             \mkdir($this->logConfig['location'], $this->logConfig['mode'], true);
         }
 
@@ -84,11 +73,9 @@ class StreamWriterFactory implements FactoryInterface
     }
 
     /**
-     * GEt log filename
-     *
-     * @return string
+     * Get log filename
      */
-    private function getLogFilename()
+    private function getLogFilename(): string
     {
         if (empty($this->logConfig['filename'])) {
             $filename = \date('Y-m-d') . '-app.log';
@@ -100,35 +87,31 @@ class StreamWriterFactory implements FactoryInterface
     }
 
     /**
-     * Get priority
-     *
-     * @return int
+     * Map syslog/Laminas integer priority to Monolog Level enum
      */
-    private function getLogPriority()
+    private function getMonologLevel(): Level
     {
+        $priority = $this->logConfig['priority'] ?? \LOG_DEBUG;
 
-        if (empty($this->logConfig['priority'])) {
-            $priority = \LOG_DEBUG;
-        } else {
-            $priority = $this->logConfig['priority'];
-        }
-
-        return $priority;
+        return match ((int) $priority) {
+            0 => Level::Emergency,
+            1 => Level::Alert,
+            2 => Level::Critical,
+            3 => Level::Error,
+            4 => Level::Warning,
+            5 => Level::Notice,
+            6 => Level::Info,
+            default => Level::Debug,
+        };
     }
 
     /**
-     * Get file path
-     *
-     * @return string
+     * Get full file path, creating the file if it does not exist
      */
-    private function getFilePath()
+    private function getFilePath(): string
     {
-        //Create file name by date if not set in the config
         $filename = $this->getLogFilename();
-
-        //create log directory if set but does not exists
         $location = $this->checkLogDirectory();
-
         $filePath = $location . \DIRECTORY_SEPARATOR . $filename;
 
         if (!file_exists($filePath)) {

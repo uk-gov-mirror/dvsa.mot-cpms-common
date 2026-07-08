@@ -5,7 +5,7 @@ namespace CpmsCommonTest\Log\Writer;
 use CpmsCommon\Log\Writer\StreamWriterFactory;
 use CpmsCommon\Utility\Util;
 use CpmsCommonTest\Bootstrap;
-use Laminas\Log\Writer\Stream;
+use Monolog\Handler\StreamHandler;
 use Laminas\ServiceManager\ServiceManager;
 
 /**
@@ -27,7 +27,7 @@ class StreamWriterFactoryTest extends \PHPUnit\Framework\TestCase
         $serviceManager = $this->getServiceManager();
         $result         = $this->writerFactory->__invoke($serviceManager, null);
 
-        $this->assertInstanceOf('Laminas\Log\Writer\Stream', $result);
+        $this->assertInstanceOf(StreamHandler::class, $result);
     }
 
     public function testCreateServiceWithNoFileName(): void
@@ -38,9 +38,9 @@ class StreamWriterFactoryTest extends \PHPUnit\Framework\TestCase
         $config['logger']['priority']  = '';
         $config['logger']['separator'] = '';
         $serviceManager                = $this->getServiceManager($config);
-        /** @var Stream $result */
+        /** @var StreamHandler $result */
         $result = $this->writerFactory->__invoke($serviceManager, null);
-        $this->assertInstanceOf('Laminas\Log\Writer\Stream', $result);
+        $this->assertInstanceOf(StreamHandler::class, $result);
     }
 
     public function testCreateLogDir(): void
@@ -56,9 +56,9 @@ class StreamWriterFactoryTest extends \PHPUnit\Framework\TestCase
         if (file_exists($config['logger']['location'])) {
             Util::deleteDir($config['logger']['location']);
         }
-        /** @var Stream $result */
+        /** @var StreamHandler $result */
         $result = $this->writerFactory->__invoke($serviceManager, null);
-        $this->assertInstanceOf('Laminas\Log\Writer\Stream', $result);
+        $this->assertInstanceOf(StreamHandler::class, $result);
     }
 
     private function getServiceManager(array $config = null): ServiceManager

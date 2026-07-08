@@ -6,6 +6,7 @@ use CpmsCommon\Service\ErrorCodeService;
 use CpmsCommon\Service\LoggerService;
 use CpmsCommonTest\Bootstrap;
 use InvalidArgumentException;
+use Monolog\Handler\StreamHandler;
 
 /**
  * Class LoggerServiceTest
@@ -25,13 +26,13 @@ class LoggerServiceTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Assert that stream writer is an instance of \Laminas\Log\Writer\Stream
+     * Assert that stream writer is an instance of Monolog\Handler\StreamHandler
      */
     public function testStreamWriterInstance(): void
     {
         $writer = $this->serviceManager->get('cpms\streamWriter');
 
-        $this->assertInstanceOf('Laminas\Log\Writer\Stream', $writer);
+        $this->assertInstanceOf(StreamHandler::class, $writer);
     }
 
     /**

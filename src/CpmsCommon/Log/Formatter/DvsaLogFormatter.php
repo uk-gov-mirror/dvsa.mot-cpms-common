@@ -5,70 +5,97 @@ namespace CpmsCommon\Log\Formatter;
 use CpmsCommon\Log\LogDataAwareInterface;
 use CpmsCommon\Log\LogDataAwareTrait;
 use DateTime;
-use Laminas\Log\Formatter\Simple;
+use Monolog\Formatter\FormatterInterface;
+use Monolog\LogRecord;
 
 /**
- * Class CustomFormatter
+ * DVSA pipe-delimited log formatter for Monolog.
  *
- * @package CpmsCommon\Log\Formatter
+ * Preserves the original ||‑separated field format while accepting
+ * a Monolog LogRecord instead of the old Laminas log event array.
  */
-class DvsaLogFormatter extends Simple implements LogDataAwareInterface
+class DvsaLogFormatter implements FormatterInterface, LogDataAwareInterface
 {
     use LogDataAwareTrait;
 
+    private string $dateTimeFormat;
+
     /**
-     * @param null $dateTimeFormat
+     * @param string|null $dateTimeFormat Defaults to \DateTime::ATOM
      */
-    public function __construct($dateTimeFormat = null)
+    public function __construct(?string $dateTimeFormat = null)
     {
-        parent::__construct($this->getFormat(), $dateTimeFormat);
+        $this->dateTimeFormat = $dateTimeFormat ?? \DateTime::ATOM;
     }
 
     /**
-     * @param array $event
-     *
-     * @return mixed|string
+     * Format a single log record into the pipe-delimited string.
      */
-    public function format($event)
+    public function format(LogRecord $record): string
     {
-        $output  = parent::format($event);
-        $logData = $this->getReplacementValues();
+        $replacements = $this->getReplacementValues($record);
 
-        foreach ($logData as $name => $value) {
-            if ($value != null) {
-                $output = str_replace("%$name%", $value, $output);
+        $output = $this->getFormat();
+
+        foreach ($replacements as $name => $value) {
+            if ($value !== null) {
+                $output = str_replace("%$name%", (string) $value, $output);
             }
         }
-        //Reset log data to prevent reuse
+
+        // Clear any remaining un-replaced placeholders
+        $output = (string) preg_replace('/%\w+%/', '', $output);
+
         $this->getLogData()->resetData();
 
-        return $output;
+        return $output . PHP_EOL;
     }
 
     /**
-     * Determine log format. Exceptions have a difference format
-     *
-     * @return string
+     * Format a batch of records.
      */
-    private function getFormat()
+    public function formatBatch(array $records): string
+    {
+        $formatted = '';
+        foreach ($records as $record) {
+            $formatted .= $this->format($record);
+        }
+        return $formatted;
+    }
+
+    /**
+     * Pipe-delimited format template — fields mirror the original Laminas formatter.
+     */
+    private function getFormat(): string
     {
         return '%timestamp%||%priority%||%priorityName%||%entryType%||%userId%||%openAmToken%||%accessToken%||' .
-        '%correlationId%||%classMethod%||%message%||%extra%||%exceptionType%||%exceptionCode%||%exceptionMessage%||' .
-        '%stackTrace%';
+            '%correlationId%||%classMethod%||%message%||%extra%||%exceptionType%||%exceptionCode%||%exceptionMessage%||' .
+            '%stackTrace%';
     }
 
     /**
-     * @internal param $priority
-     * @internal param $message
-     * @internal param $extra
-     * @return array
+     * Build a flat replacement map from the Monolog record and the current LogData.
+     *
+     * @return array<string, mixed>
      */
-    private function getReplacementValues()
+    private function getReplacementValues(LogRecord $record): array
     {
-        $dateObject                = new DateTime();
-        $date                      = $dateObject->format(\DateTime::ATOM);
-        $replacements              = $this->logData ? $this->logData->toArray() : [];
-        $replacements['timestamp'] = $date;
+        $dateObject = new DateTime();
+        $date = $dateObject->format($this->dateTimeFormat);
+
+        // Strip internal Monolog metadata from context before serialising as %extra%
+        $context = $record->context;
+        unset($context['__dvsa_metadata__']);
+        $extraStr = !empty($context) ? json_encode($context) : '';
+
+        $replacements = $this->logData ? $this->logData->toArray() : [];
+
+        // Overlay record-level fields (always present, not overrideable by LogData)
+        $replacements['timestamp']    = $date;
+        $replacements['priority']     = $record->level->value;
+        $replacements['priorityName'] = $record->level->name;
+        $replacements['message']      = $record->message;
+        $replacements['extra']        = $extraStr;
 
         return $replacements;
     }
