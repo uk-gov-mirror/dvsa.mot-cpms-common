@@ -38,12 +38,39 @@ class SynchronousQueueAdapter implements QueueInterface, LoggerAwareInterface
      */
     public function enqueue(JobInterface $job): void
     {
-        $this->process($job);
+        $this->getLogger()->debug('Queue read started.', ['message_count' => 1]);
+        $processed = $this->process($job);
+        $this->getLogger()->debug('Queue read finished.', [
+            'message_count' => 1,
+            'processed_count' => 1,
+            'success_count' => $processed ? 1 : 0,
+            'failed_count' => $processed ? 0 : 1,
+        ]);
     }
 
     public function enqueueAll(array $jobs): void
     {
-        array_map([$this, 'enqueue'], $jobs);
+        $jobCount = count($jobs);
+        $this->getLogger()->debug('Queue read started.', ['message_count' => $jobCount]);
+
+        $successCount = 0;
+        $failedCount = 0;
+
+        foreach ($jobs as $job) {
+            if ($this->process($job)) {
+                $successCount++;
+                continue;
+            }
+
+            $failedCount++;
+        }
+
+        $this->getLogger()->debug('Queue read finished.', [
+            'message_count' => $jobCount,
+            'processed_count' => $successCount + $failedCount,
+            'success_count' => $successCount,
+            'failed_count' => $failedCount,
+        ]);
     }
 
     /**
@@ -54,8 +81,19 @@ class SynchronousQueueAdapter implements QueueInterface, LoggerAwareInterface
     protected function process(JobInterface $job)
     {
         try {
-            return $job->handle($this->serviceLocator);
+            $acknowledged = (bool)$job->handle($this->serviceLocator);
+
+            if (!$acknowledged) {
+                $this->getLogger()->warning('Queue acknowledgement contract issue: job did not acknowledge processing.', [
+                    'job_class' => get_class($job),
+                ]);
+            }
+
+            return $acknowledged;
         } catch (\Exception $e) {
+            $this->getLogger()->warning('Queue acknowledgement contract issue: job threw during acknowledgement.', [
+                'job_class' => get_class($job),
+            ]);
             $this->logException($e);
             return false;
         }

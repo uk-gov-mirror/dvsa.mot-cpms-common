@@ -8,6 +8,7 @@
 
 use CpmsCommon\Service\ProfilingInitializer;
 use Laminas\ServiceManager\Factory\InvokableFactory;
+use Psr\Log\LoggerInterface;
 
 /**
  * Module configuration
@@ -19,6 +20,8 @@ return array(
             'cpms\api\contentType'           => 'CpmsCommon\Service\ApiContentTypeFactory',
             'OpenAmServiceFactory'           => 'CpmsCommon\Service\OpenAmServiceFactory',
             'Logger'                         => 'CpmsCommon\Service\LoggerServiceFactory',
+            'cpms\client\logger'           => 'CpmsCommon\Service\ClientLoggerFactory',
+            LoggerInterface::class           => 'CpmsCommon\Service\ClientLoggerFactory',
             'cpms\streamWriter'              => 'CpmsCommon\Log\Writer\StreamWriterFactory',
             'dvsa\formatter'                 => 'CpmsCommon\Log\Formatter\DvsaFormatterFactory',
             'logger\data\provider'           => 'CpmsCommon\Log\LogDataProviderFactory',
@@ -34,7 +37,22 @@ return array(
 
         'abstract_factories' => array(
             'CpmsCommon\AbstractInputFilterFactory'
-        )
+        ),
+        'aliases'            => array(
+            'logger' => 'cpms\client\logger',
+        ),
+    ),
+
+    'cpms_api' => array(
+        'logger_alias' => '',
+    ),
+
+    'cpms_client' => array(
+        'logger' => array(
+            'location' => 'data/logs',
+            'filename' => 'cpms-client.log',
+            'channel'  => 'cpms-client',
+        ),
     ),
 
     'controller_plugins'              => array(

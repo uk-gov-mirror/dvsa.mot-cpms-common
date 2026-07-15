@@ -11,13 +11,14 @@
 namespace CpmsCommon\View;
 
 use CpmsCommon\Service\ErrorCodeService;
-use CpmsCommon\Service\LoggerService;
+use CpmsCommon\Service\LoggerAliasResolver;
 use Laminas\Http\Response;
 use Laminas\Http\Response as HttpResponse;
 use Laminas\Mvc\Application;
 use Laminas\Mvc\MvcEvent;
 use Laminas\Mvc\View\Http\ExceptionStrategy;
 use Laminas\View\Model\JsonModel;
+use Psr\Log\LoggerInterface;
 
 /**
  * Class JsonExceptionStrategy
@@ -115,9 +116,10 @@ class JsonExceptionStrategy extends ExceptionStrategy
                 /** @var ErrorCodeService $errorService */
                 $errorService = $serviceLocator->get('cpms\errorCodeService');
                 $data = $errorService->getErrorMessage($errorCode);
-                /** @var LoggerService $logger */
-                $logger = $serviceLocator->get('Logger');
-                $logger->logException($exception);
+                $loggerAlias = LoggerAliasResolver::resolve($serviceLocator);
+                /** @var LoggerInterface $logger */
+                $logger = $serviceLocator->get($loggerAlias);
+                $logger->error($exception->getMessage(), ['exception' => $exception]);
             } else {
                 $data = array(
                     ErrorCodeService::ERROR_CODE_KEY    => ErrorCodeService::CRITICAL_ERROR,

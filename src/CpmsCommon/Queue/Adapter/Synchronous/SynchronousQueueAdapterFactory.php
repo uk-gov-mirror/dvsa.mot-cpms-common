@@ -2,10 +2,12 @@
 
 namespace CpmsCommon\Queue\Adapter\Synchronous;
 
+use CpmsCommon\Service\LoggerAliasResolver;
 use Interop\Container\Exception\ContainerException;
 use Laminas\ServiceManager\Exception\ServiceNotCreatedException;
 use Laminas\ServiceManager\Exception\ServiceNotFoundException;
 use Laminas\ServiceManager\ServiceLocatorInterface;
+use Psr\Log\LoggerInterface;
 
 /**
  * Class SynchronousQueueAdapterFactory
@@ -26,6 +28,17 @@ class SynchronousQueueAdapterFactory
      */
     public function __invoke(ServiceLocatorInterface $container)
     {
-        return (new SynchronousQueueAdapter())->setServiceLocator($container);
+        $adapter = (new SynchronousQueueAdapter())->setServiceLocator($container);
+
+        $loggerAlias = LoggerAliasResolver::resolve($container);
+        if ($container->has($loggerAlias)) {
+            $logger = $container->get($loggerAlias);
+
+            if ($logger instanceof LoggerInterface) {
+                $adapter->setLogger($logger);
+            }
+        }
+
+        return $adapter;
     }
 }

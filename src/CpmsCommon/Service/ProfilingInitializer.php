@@ -13,6 +13,7 @@ use Laminas\EventManager\Event;
 use Laminas\EventManager\EventManagerAwareInterface;
 use Laminas\ServiceManager\Initializer\InitializerInterface;
 use Laminas\ServiceManager\ServiceLocatorInterface;
+use Psr\Log\LoggerInterface;
 
 /**
  * Class ProfilingInitializer
@@ -67,8 +68,9 @@ class ProfilingInitializer implements InitializerInterface
         $instance->getEventManager()->attach(
             '*',
             function (Event $event) use ($container) {
-                /** @var LoggerService $logger */
-                $logger = $container->get('Logger');
+                $loggerAlias = LoggerAliasResolver::resolve($container);
+                /** @var LoggerInterface $logger */
+                $logger = $container->get($loggerAlias);
 
                 $exploded  = explode('.', $event->getName() ?? '');
                 $eventName = $exploded[0];

@@ -3,7 +3,7 @@
 namespace CpmsCommonTest\Controller;
 
 use CpmsCommon\Service\ErrorCodeService;
-use CpmsCommon\Service\LoggerService;
+use CpmsCommon\Utility\LoggerAwareInterface;
 use CpmsCommon\View\JsonExceptionStrategy;
 use CpmsCommonTest\Bootstrap;
 use CpmsCommonTest\SampleController;
@@ -18,6 +18,7 @@ use Laminas\Router\Http\TreeRouteStack as HttpRouter;
 use Laminas\Router\RouteMatch;
 use Laminas\Mvc\Controller\ControllerManager;
 use Laminas\ServiceManager\ServiceManager;
+use Psr\Log\LoggerInterface;
 
 /**
  * Class SampleControllerTest
@@ -78,7 +79,7 @@ class SampleControllerTest extends AbstractHttpControllerTestCase
     public function testControllerInstance(): void
     {
         $this->assertInstanceOf('CpmsCommon\Controller\AbstractRestfulController', $this->controller);
-        $this->assertInstanceOf(LoggerService::class, $this->controller->getLogger());
+        $this->assertInstanceOf(LoggerInterface::class, $this->controller->getLogger());
         $this->assertInstanceOf('Laminas\ServiceManager\ServiceManager', $this->controller->getServiceLocator());
 
         $message = $this->controller->getErrorMessage(ErrorCodeService::AN_ERROR_OCCURRED);
@@ -86,7 +87,7 @@ class SampleControllerTest extends AbstractHttpControllerTestCase
         $this->assertArrayHasKey('code', $message);
 
         $this->controller->logException(new \Exception('phpunit'));
-        $this->controller->log('phpunit', LoggerService::DEBUG);
+        $this->controller->log('phpunit', LoggerAwareInterface::DEBUG);
     }
 
     public function testDispatch(): void

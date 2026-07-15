@@ -5,6 +5,9 @@ namespace CpmsCommonTest\Utility;
 use CpmsCommonTest\Bootstrap;
 use Laminas\ServiceManager\ServiceManager;
 use CpmsCommonTest\Mock\LoggerAwareTraitMock;
+use Monolog\Handler\NullHandler;
+use Monolog\Logger;
+use Psr\Log\LoggerInterface;
 
 class LoggerAwareTraitTest extends \PHPUnit\Framework\TestCase
 {
@@ -16,7 +19,7 @@ class LoggerAwareTraitTest extends \PHPUnit\Framework\TestCase
 
         $this->trait->log('message');
 
-        $this->assertInstanceOf('CpmsCommon\Service\LoggerService', $this->trait->getLogger());
+        $this->assertInstanceOf(LoggerInterface::class, $this->trait->getLogger());
     }
 
     public function testLogException(): void
@@ -25,7 +28,49 @@ class LoggerAwareTraitTest extends \PHPUnit\Framework\TestCase
 
         $result = $this->trait->logException(new \Exception('Exception'));
 
-        $this->assertInstanceOf('CpmsCommon\Service\LoggerService', $result);
+        $this->assertInstanceOf(LoggerInterface::class, $result);
+    }
+
+    public function testUsesConfiguredLoggerAliasWhenServiceExists(): void
+    {
+        $defaultLogger = new Logger('default');
+        $defaultLogger->pushHandler(new NullHandler());
+
+        $customLogger = new Logger('custom');
+        $customLogger->pushHandler(new NullHandler());
+
+        $this->setUpTrait(new ServiceManager([
+            'services' => [
+                'config' => [
+                    'cpms_api' => [
+                        'logger_alias' => 'custom\\logger',
+                    ],
+                ],
+                'cpms\\client\\logger' => $defaultLogger,
+                'custom\\logger' => $customLogger,
+            ],
+        ]));
+
+        $this->assertSame($customLogger, $this->trait->getLogger());
+    }
+
+    public function testFallsBackToDefaultAliasWhenConfiguredAliasIsInvalid(): void
+    {
+        $defaultLogger = new Logger('default');
+        $defaultLogger->pushHandler(new NullHandler());
+
+        $this->setUpTrait(new ServiceManager([
+            'services' => [
+                'config' => [
+                    'cpms_api' => [
+                        'logger_alias' => 'invalid\\logger',
+                    ],
+                ],
+                'cpms\\client\\logger' => $defaultLogger,
+            ],
+        ]));
+
+        $this->assertSame($defaultLogger, $this->trait->getLogger());
     }
 
     /**

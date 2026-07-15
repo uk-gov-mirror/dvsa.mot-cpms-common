@@ -6,8 +6,10 @@
 
 namespace CpmsCommon\Utility;
 
-use CpmsCommon\Service\LoggerService;
+use CpmsCommon\Service\LoggerAliasResolver;
 use Laminas\ServiceManager\ServiceManager;
+use Psr\Log\LogLevel;
+use Psr\Log\LoggerInterface;
 
 /**
  * Class LoggerAwareTrait
@@ -18,29 +20,33 @@ use Laminas\ServiceManager\ServiceManager;
  */
 trait LoggerAwareTrait
 {
-    protected ?LoggerService $logger = null;
+    protected ?LoggerInterface $logger = null;
 
     /**
      * Returns an instantiated instance of Zend Log.
      *
      * @throws \InvalidArgumentException
      */
-    public function getLogger(): LoggerService
+    public function getLogger(): LoggerInterface
     {
         if (null === $this->logger) {
-            /** @var LoggerService $logger */
-            $logger = $this->getServiceLocator()->get('Logger');
+            $loggerAlias = LoggerAliasResolver::resolve($this->getServiceLocator());
+            $logger = $this->getServiceLocator()->get($loggerAlias);
+
+            if (!$logger instanceof LoggerInterface) {
+                throw new \InvalidArgumentException(sprintf('Logger service "%s" must implement %s', $loggerAlias, LoggerInterface::class));
+            }
+
             $this->setLogger($logger);
         }
 
-        /** @var LoggerService */
         return $this->logger;
     }
 
     /**
      * Set logger object
      */
-    public function setLogger(LoggerService $logger): self
+    public function setLogger(LoggerInterface $logger): self
     {
         $this->logger = $logger;
 
@@ -50,9 +56,9 @@ trait LoggerAwareTrait
     /**
      * Logs a message to the defined logger.
      */
-    public function log(string $message, int $priority = LoggerService::INFO, array $extra = array()): void
+    public function log(string $message, int $priority = LoggerAwareInterface::INFO, array $extra = array()): void
     {
-        $this->getLogger()->log($priority, $message, $extra);
+        $this->getLogger()->log($this->mapPriorityToLevel($priority), $message, $extra);
     }
 
     /**
@@ -60,10 +66,26 @@ trait LoggerAwareTrait
      *
      * @param \Exception $exception
      *
-     * @return LoggerService
+     * @return LoggerInterface
      */
-    public function logException(\Exception $exception): LoggerService
+    public function logException(\Exception $exception): LoggerInterface
     {
-        return $this->getLogger()->logException($exception);
+        $this->getLogger()->error($exception->getMessage(), ['exception' => $exception]);
+
+        return $this->getLogger();
+    }
+
+    private function mapPriorityToLevel(int $priority): string
+    {
+        return match ($priority) {
+            LoggerAwareInterface::EMERG => LogLevel::EMERGENCY,
+            LoggerAwareInterface::ALERT => LogLevel::ALERT,
+            LoggerAwareInterface::CRIT => LogLevel::CRITICAL,
+            LoggerAwareInterface::ERR => LogLevel::ERROR,
+            LoggerAwareInterface::WARN => LogLevel::WARNING,
+            LoggerAwareInterface::NOTICE => LogLevel::NOTICE,
+            LoggerAwareInterface::INFO => LogLevel::INFO,
+            default => LogLevel::DEBUG,
+        };
     }
 }

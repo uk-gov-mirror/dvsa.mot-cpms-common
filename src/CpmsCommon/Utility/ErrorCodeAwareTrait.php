@@ -14,10 +14,9 @@ namespace CpmsCommon\Utility;
 use CpmsCommon\Service\ErrorCodeService;
 use Laminas\Http\PhpEnvironment\Request;
 use Laminas\Http\PhpEnvironment\Response;
-use Laminas\Stdlib\ParametersInterface;
 use Laminas\Stdlib\Parameters;
 use Laminas\ServiceManager\ServiceManager;
-use CpmsCommon\Service\LoggerService;
+use Psr\Log\LoggerInterface;
 
 /**
  * Class Error CodeAwareTrait
@@ -50,7 +49,7 @@ trait ErrorCodeAwareTrait
         $message = $errorService->getErrorMessage($errorCode, $replacement, $httpStatusCode, $data);
 
         if ($this->getServiceLocator()->has('logger')) {
-            /** @var LoggerService $logger */
+            /** @var LoggerInterface $logger */
             $logger = $this->getServiceLocator()->get('logger');
             $logger->debug(print_r($message, true));
             if (isset($message['code']) and $message['code'] == ErrorCodeService::GENERIC_ERROR_CODE) {
@@ -70,7 +69,7 @@ trait ErrorCodeAwareTrait
                     $post = $request->getPost();
                     $debugInfo['getParams'] = $query->getArrayCopy();
                     $debugInfo['postParams'] = $post->getArrayCopy();
-                    /** @var LoggerService $logger */
+                    /** @var LoggerInterface $logger */
                     $logger = $this->getServiceLocator()->get('logger');
                     $logger->debug(print_r($debugInfo, true));
                 }

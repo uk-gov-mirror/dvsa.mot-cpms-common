@@ -4,11 +4,12 @@ namespace CpmsCommonTest\Controller;
 
 use CpmsCommon\Service\Config\ServiceOptions;
 use CpmsCommon\Service\ErrorCodeService;
-use CpmsCommon\Service\LoggerService;
+use CpmsCommon\Utility\LoggerAwareInterface;
 use CpmsCommon\Utility\Util;
 use CpmsCommonTest\Bootstrap;
 use CpmsCommonTest\SampleService;
 use Laminas\ServiceManager\ServiceManager;
+use Psr\Log\LoggerInterface;
 
 class SampleServiceTest extends \PHPUnit\Framework\TestCase
 {
@@ -28,7 +29,7 @@ class SampleServiceTest extends \PHPUnit\Framework\TestCase
     public function testServiceInstance(): void
     {
         $this->assertInstanceOf('CpmsCommon\AbstractService', $this->service);
-        $this->assertInstanceOf(LoggerService::class, $this->service->getLogger());
+        $this->assertInstanceOf(LoggerInterface::class, $this->service->getLogger());
         $this->assertInstanceOf('Laminas\ServiceManager\ServiceManager', $this->service->getServiceLocator());
         $this->assertInstanceOf('CpmsCommon\Service\Config\ServiceOptions', $this->service->getOptions());
 
@@ -37,7 +38,7 @@ class SampleServiceTest extends \PHPUnit\Framework\TestCase
         $this->assertArrayHasKey('code', $message);
 
         $this->service->logException(new \Exception('phpunit'));
-        $this->service->log('phpunit', LoggerService::DEBUG);
+        $this->service->log('phpunit', LoggerAwareInterface::DEBUG);
 
         /** @var array $config */
         $config = $this->serviceManager->get('config');
