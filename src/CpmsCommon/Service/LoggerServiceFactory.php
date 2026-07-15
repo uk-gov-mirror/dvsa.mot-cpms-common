@@ -29,10 +29,10 @@ class LoggerServiceFactory implements FactoryInterface
         /** @var array $serviceConfig */
         $serviceConfig = $container->get('config');
         $logData = null;
-        $writers = (array)$serviceConfig['logger']['writers'];
+        $writers = isset($serviceConfig['logger']['writers']) ? (array)$serviceConfig['logger']['writers'] : [];
         $writers = array_unique($writers);
 
-        if (!empty($serviceConfig['logger']['replacement'])) {
+        if (!empty($serviceConfig['logger']['replacement'] ?? null)) {
             $logData = $container->get($serviceConfig['logger']['replacement']);
         }
 
