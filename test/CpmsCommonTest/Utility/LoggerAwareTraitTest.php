@@ -7,9 +7,10 @@ use Laminas\ServiceManager\ServiceManager;
 use CpmsCommonTest\Mock\LoggerAwareTraitMock;
 use Monolog\Handler\NullHandler;
 use Monolog\Logger;
+use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
-class LoggerAwareTraitTest extends \PHPUnit\Framework\TestCase
+class LoggerAwareTraitTest extends TestCase
 {
     private LoggerAwareTraitMock $trait;
 
@@ -73,11 +74,6 @@ class LoggerAwareTraitTest extends \PHPUnit\Framework\TestCase
         $this->assertSame($defaultLogger, $this->trait->getLogger());
     }
 
-    /**
-     * Maybe isolate logger service?
-     *
-     * @param $serviceManager
-     */
     private function setUpTrait(ServiceManager $serviceManager): void
     {
         $this->trait = new LoggerAwareTraitMock();

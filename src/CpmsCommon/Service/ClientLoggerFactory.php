@@ -2,10 +2,8 @@
 
 namespace CpmsCommon\Service;
 
+use DvsaLogger\Factory\MotLoggerFactory;
 use Laminas\ServiceManager\Factory\FactoryInterface;
-use Monolog\Handler\StreamHandler;
-use Monolog\Level;
-use Monolog\Logger;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
@@ -22,24 +20,20 @@ class ClientLoggerFactory implements FactoryInterface
      */
     public function __invoke(ContainerInterface $container, $requestedName, array $options = null): LoggerInterface
     {
-        $config = $container->has('config') ? (array)$container->get('config') : [];
-        $loggerConfig = (array)($config['cpms_client']['logger'] ?? []);
+        $motLogger = (new MotLoggerFactory())
+            ->create($this->buildMotLoggerConfig($container));
 
-        $location = (string)($loggerConfig['location'] ?? self::DEFAULT_LOCATION);
-        $filename = (string)($loggerConfig['filename'] ?? self::DEFAULT_FILENAME);
-        $channel = (string)($loggerConfig['channel'] ?? self::DEFAULT_CHANNEL);
+        return $motLogger->getLogger();
+    }
 
-        if ($location === '') {
-            $location = self::DEFAULT_LOCATION;
-        }
+    private function buildMotLoggerConfig(ContainerInterface $container): array
+    {
+        $config = $container->has('config') ? (array) $container->get('config') : [];
+        $loggerConfig = (array) ($config['cpms_client']['logger'] ?? []);
 
-        if ($filename === '') {
-            $filename = self::DEFAULT_FILENAME;
-        }
-
-        if ($channel === '') {
-            $channel = self::DEFAULT_CHANNEL;
-        }
+        $location = $this->resolveConfigValue($loggerConfig, 'location', self::DEFAULT_LOCATION);
+        $filename = $this->resolveConfigValue($loggerConfig, 'filename', self::DEFAULT_FILENAME);
+        $channel = $this->resolveConfigValue($loggerConfig, 'channel', self::DEFAULT_CHANNEL);
 
         $filePath = rtrim($location, '/') . '/' . trim($filename, '/');
         $directory = dirname($filePath);
@@ -48,10 +42,26 @@ class ClientLoggerFactory implements FactoryInterface
             mkdir($directory, 0777, true);
         }
 
-        $logger = new Logger($channel);
-        $logger->pushHandler(new StreamHandler($filePath, Level::Debug));
+        return [
+            'channel' => $channel,
+            'register_error_handler' => false,
+            'writers' => [
+                [
+                    'type' => 'stream',
+                    'path' => $filePath,
+                    'formatter' => 'pipe',
+                    'level' => 'debug',
+                    'enabled' => true,
+                ],
+            ],
+        ];
+    }
 
-        return $logger;
+    private function resolveConfigValue(array $loggerConfig, string $key, string $default): string
+    {
+        $value = trim((string) ($loggerConfig[$key] ?? ''));
+
+        return $value === '' ? $default : $value;
     }
 }
 
