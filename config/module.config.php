@@ -19,13 +19,17 @@ return array(
             'cpms\api\contentType'           => 'CpmsCommon\Service\ApiContentTypeFactory',
             'OpenAmServiceFactory'           => 'CpmsCommon\Service\OpenAmServiceFactory',
             'Logger'                         => 'CpmsCommon\Service\LoggerServiceFactory',
-            'cpms\streamWriter'              => 'CpmsCommon\Log\Writer\StreamWriterFactory',
-            'dvsa\formatter'                 => 'CpmsCommon\Log\Formatter\DvsaFormatterFactory',
-            'logger\data\provider'           => 'CpmsCommon\Log\LogDataProviderFactory',
+//            'cpms\streamWriter'              => 'CpmsCommon\Log\Writer\StreamWriterFactory',
+//            'dvsa\formatter'                 => 'CpmsCommon\Log\Formatter\DvsaFormatterFactory',
+//            'logger\data\provider'           => 'CpmsCommon\Log\LogDataProviderFactory',
             'cpms\errorCodeService'          => 'CpmsCommon\Service\ErrorCodeServiceFactory',
             'cpms\service\validationService' => 'CpmsCommon\Service\ValidationServiceFactory',
             'cpms\queue\synchronous'         => 'CpmsCommon\Queue\Adapter\Synchronous\SynchronousQueueAdapterFactory',
             'cpms\queue'                     => 'CpmsCommon\Queue\DefaultQueueFactory',
+        ),
+
+        'aliases'            => array(
+            'logger' => 'Logger',
         ),
 
         'initializers'       => [
@@ -48,17 +52,9 @@ return array(
         ),
     ),
     'logger'                          => array(
-        'writers'        => array(
-            'cpms\streamWriter',
-        ),
-        'formatter'      => 'dvsa\formatter',
-        'separator'      => '^^*',
-        'replacement'    => 'logger\data\provider',
-        'dateTimeFormat' => 'Y-m-d\TH:i:s.uO',//'Y-m-d H:i:s.u',
-        'priority'       => \LOG_DEBUG,
         'filename'       => \date('Y-m-d') . '-cpms-common.log',
         'location'       => '/var/log/dvsa', // log location
-        'mode'           => 0777, //file permission for log file
+        'channel'        => 'cpms-common',
     ),
     'error_code'                      => array(
         'messages' => array(),

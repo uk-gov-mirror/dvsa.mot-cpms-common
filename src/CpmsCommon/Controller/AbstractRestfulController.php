@@ -98,7 +98,7 @@ abstract class AbstractRestfulController extends ZendRestfulController implement
 
             return $data;
         } catch (\Exception $exception) {
-            $this->logException($exception);
+            $logger->error($exception->getMessage(), ['ex' => $exception]);
             $response  = new HttpResponse();
             $viewModel = new JsonModel(
                 $this->getErrorMessage(

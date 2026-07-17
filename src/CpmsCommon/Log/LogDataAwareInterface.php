@@ -2,8 +2,6 @@
 
 namespace CpmsCommon\Log;
 
-use CpmsCommon\Log\LogData;
-
 /**
  * Interface LogDataAwareInterface
  *

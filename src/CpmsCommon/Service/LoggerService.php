@@ -2,66 +2,32 @@
 
 namespace CpmsCommon\Service;
 
-use CpmsCommon\Log\LogDataAwareInterface;
-use CpmsCommon\Log\LogDataAwareTrait;
-use Laminas\Log\Logger;
+use DvsaLogger\Logger\MotLogger;
+use Monolog\Level;
 
-class LoggerService extends Logger implements LogDataAwareInterface
+class LoggerService extends MotLogger
 {
-    use LogDataAwareTrait;
+    public function log(Level|int $level, string $message, array $context = []): self
+    {
+        return parent::log($level, $message, $context);
+    }
+
+    public function debug(string $message, array $context = []): self
+    {
+        return parent::debug($message, $context);
+    }
+
+    public function error(string $message, array $context = []): self
+    {
+        return parent::error($message, $context);
+    }
 
     /**
-     * @param \Exception $exception
-     *
-     * @return $this
+     * Backward-compatible helper while call sites move to native mot-logger APIs.
      */
     public function logException(\Exception $exception)
     {
-        $this->getLogData()->setEntryType('exception');
-        $this->err($this->processException($exception, false));
-
-        return $this;
-    }
-
-    /**
-     * Format exception
-     *
-     * @param \Exception $exception
-     * @param bool       $returnLog
-     *
-     * @return string
-     */
-    public function processException(\Exception $exception, $returnLog = true)
-    {
-        $log   = '';
-        $index = 1;
-        $trace = $exception->getTraceAsString();
-
-        $this->getLogData()->setExceptionCode($exception->getCode());
-        $this->getLogData()->setExceptionMessage($exception->getMessage());
-        $this->getLogData()->setStackTrace($trace);
-        $this->getLogData()->setExceptionType(get_class($exception));
-
-        if ($returnLog) {
-            do {
-                $messages[] = $index++ . ": " . $exception->getMessage();
-            } while ($exception = $exception->getPrevious());
-
-            $log .= "Exception:\n" . implode("\n", $messages) . "\nTrace:\n" . $trace . "\n\n";
-        }
-
-        return $log;
-    }
-
-    /**
-     * @param string $key
-     * @param mixed $value
-     *
-     * @return $this
-     */
-    public function addReplacement($key, $value)
-    {
-        $this->getLogData()->{$key} = $value;
+        $this->error($exception->getMessage(), ['ex' => $exception]);
 
         return $this;
     }
