@@ -69,5 +69,4 @@ class LoggerServiceTest extends \PHPUnit\Framework\TestCase
 
         $this->assertInstanceOf('CpmsCommon\Service\LoggerService', $done);
     }
-
 }
