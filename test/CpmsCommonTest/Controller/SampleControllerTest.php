@@ -6,18 +6,19 @@ use CpmsCommon\Service\ErrorCodeService;
 use CpmsCommon\View\JsonExceptionStrategy;
 use CpmsCommonTest\Bootstrap;
 use CpmsCommonTest\SampleController;
+use DvsaLogger\Logger\MotLogger;
 use Laminas\Authentication\Adapter\Exception\RuntimeException;
 use Laminas\Http\Header\ContentType;
 use Laminas\Http\Headers;
 use Laminas\Http\PhpEnvironment\Request;
 use Laminas\Http\Response;
-use Laminas\Log\Logger;
 use Laminas\Mvc\Application;
 use Laminas\Mvc\MvcEvent;
 use Laminas\Router\Http\TreeRouteStack as HttpRouter;
 use Laminas\Router\RouteMatch;
 use Laminas\Mvc\Controller\ControllerManager;
 use Laminas\ServiceManager\ServiceManager;
+use Monolog\Level;
 
 /**
  * Class SampleControllerTest
@@ -78,7 +79,7 @@ class SampleControllerTest extends AbstractHttpControllerTestCase
     public function testControllerInstance(): void
     {
         $this->assertInstanceOf('CpmsCommon\Controller\AbstractRestfulController', $this->controller);
-        $this->assertInstanceOf('Laminas\Log\Logger', $this->controller->getLogger());
+        $this->assertInstanceOf(MotLogger::class, $this->controller->getLogger());
         $this->assertInstanceOf('Laminas\ServiceManager\ServiceManager', $this->controller->getServiceLocator());
 
         $message = $this->controller->getErrorMessage(ErrorCodeService::AN_ERROR_OCCURRED);
@@ -86,7 +87,7 @@ class SampleControllerTest extends AbstractHttpControllerTestCase
         $this->assertArrayHasKey('code', $message);
 
         $this->controller->logException(new \Exception('phpunit'));
-        $this->controller->log('phpunit', Logger::DEBUG);
+        $this->controller->log('phpunit', Level::Debug);
     }
 
     public function testDispatch(): void

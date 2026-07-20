@@ -35,10 +35,27 @@ class LoggerServiceFactory implements FactoryInterface
         $serviceConfig = (array) $container->get('config');
         $loggerConfig = (array) ($serviceConfig['logger'] ?? []);
 
-        $location = rtrim((string) ($loggerConfig['location'] ?? 'data/logs'), '/');
-        $filename = (string) ($loggerConfig['filename'] ?? 'cpms-common.log');
+        $location = trim((string) ($loggerConfig['location'] ?? ''));
+        if ($location === '') {
+            $location = 'data/logs';
+        }
+        $location = rtrim($location, '/');
+
+        $filename = trim((string) ($loggerConfig['filename'] ?? ''));
+        if ($filename === '') {
+            $filename = 'cpms-common.log';
+        }
+
         $channel = (string) ($loggerConfig['channel'] ?? 'cpms-common');
         $path = $location . '/' . ltrim($filename, '/');
+
+        if (!is_dir($location)) {
+            mkdir($location, 0777, true);
+        }
+
+        if (!file_exists($path)) {
+            touch($path);
+        }
 
         $level = $this->resolveLevel($loggerConfig['priority'] ?? null);
 
