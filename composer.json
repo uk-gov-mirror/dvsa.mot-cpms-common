@@ -46,7 +46,7 @@
             "vendor/bin/phpcbf"
         ],
         "phpstan": [
-            "vendor/bin/phpstan"
+            "vendor/bin/phpstan --memory-limit=512M"
         ]
     },
     "config": {

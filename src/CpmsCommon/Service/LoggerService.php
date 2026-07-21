@@ -9,23 +9,29 @@ class LoggerService extends MotLogger
 {
     public function log(Level|int $level, string $message, array $context = []): self
     {
-        return parent::log($level, $message, $context);
+        parent::log($level, $message, $context);
+
+        return $this;
     }
 
     public function debug(string $message, array $context = []): self
     {
-        return parent::debug($message, $context);
+        parent::debug($message, $context);
+
+        return $this;
     }
 
     public function error(string $message, array $context = []): self
     {
-        return parent::error($message, $context);
+        parent::error($message, $context);
+
+        return $this;
     }
 
     /**
      * Backward-compatible helper while call sites move to native mot-logger APIs.
      */
-    public function logException(\Exception $exception)
+    public function logException(\Exception $exception): self
     {
         $this->error($exception->getMessage(), ['ex' => $exception]);
 

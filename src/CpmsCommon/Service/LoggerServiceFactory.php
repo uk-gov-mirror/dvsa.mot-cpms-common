@@ -8,6 +8,7 @@ use DvsaLogger\Formatter\PipeDelimitedFormatter;
 use Psr\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
 use Monolog\Handler\StreamHandler;
+use Monolog\Level;
 use Monolog\Logger as MonologLogger;
 
 /**
@@ -59,19 +60,27 @@ class LoggerServiceFactory implements FactoryInterface
 
         $level = $this->resolveLevel($loggerConfig['priority'] ?? null);
 
-        $handler = new StreamHandler($path, MonologLogger::toMonologLevel($level));
+        $handler = new StreamHandler($path, $level);
         $handler->setFormatter(new PipeDelimitedFormatter());
 
         $logger = new MonologLogger($channel);
         $logger->pushHandler($handler);
 
-        $identityProvider = $container->has(IdentityProviderInterface::class)
-            ? $container->get(IdentityProviderInterface::class)
-            : null;
+        $identityProvider = null;
+        if ($container->has(IdentityProviderInterface::class)) {
+            $candidate = $container->get(IdentityProviderInterface::class);
+            if ($candidate instanceof IdentityProviderInterface) {
+                $identityProvider = $candidate;
+            }
+        }
 
-        $tokenService = $container->has(TokenServiceInterface::class)
-            ? $container->get(TokenServiceInterface::class)
-            : null;
+        $tokenService = null;
+        if ($container->has(TokenServiceInterface::class)) {
+            $candidate = $container->get(TokenServiceInterface::class);
+            if ($candidate instanceof TokenServiceInterface) {
+                $tokenService = $candidate;
+            }
+        }
 
         $requestUuid = isset($loggerConfig['request_uuid']) && is_string($loggerConfig['request_uuid'])
             ? $loggerConfig['request_uuid']
@@ -88,25 +97,38 @@ class LoggerServiceFactory implements FactoryInterface
         );
     }
 
-    private function resolveLevel($priority): string
+    private function resolveLevel(null|int|string|Level $priority): Level
     {
+        if ($priority instanceof Level) {
+            return $priority;
+        }
+
         if (is_string($priority) && $priority !== '') {
-            return strtolower($priority);
+            return match (strtolower($priority)) {
+                'emergency' => Level::Emergency,
+                'alert' => Level::Alert,
+                'critical' => Level::Critical,
+                'error' => Level::Error,
+                'warning' => Level::Warning,
+                'notice' => Level::Notice,
+                'info' => Level::Info,
+                default => Level::Debug,
+            };
         }
 
         if (!is_int($priority)) {
-            return 'debug';
+            return Level::Debug;
         }
 
         return match ($priority) {
-            0 => 'emergency',
-            1 => 'alert',
-            2 => 'critical',
-            3 => 'error',
-            4 => 'warning',
-            5 => 'notice',
-            6 => 'info',
-            default => 'debug',
+            0 => Level::Emergency,
+            1 => Level::Alert,
+            2 => Level::Critical,
+            3 => Level::Error,
+            4 => Level::Warning,
+            5 => Level::Notice,
+            6 => Level::Info,
+            default => Level::Debug,
         };
     }
 }
