@@ -16,10 +16,30 @@ concurrency:
 
 jobs:
   static:
-    uses: dvsa/.github/.github/workflows/php-static.yml@v4.1.0
-    with:
-      php-version: "8.2"
-      composer-version: '2.2.24'
+    name: Static Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: json, mbstring, curl
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Run PHP_CodeSniffer
+        run: composer phpcs
+
+      - name: Run PHPStan
+        run: composer phpstan
+
+      - name: Run Psalm
+        run: composer psalm
 
   test:
     uses: dvsa/.github/.github/workflows/php-tests.yml@v4.1.0

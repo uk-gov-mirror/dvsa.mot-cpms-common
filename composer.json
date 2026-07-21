@@ -26,9 +26,9 @@
         "phpstan/phpstan": "^1.12"
     },
     "autoload": {
-        "psr-0": {
-            "CpmsCommon\\": "src/",
-            "CpmsCommonTest\\": "test/"
+        "psr-4": {
+            "CpmsCommon\\": "src/CpmsCommon/",
+            "CpmsCommonTest\\": "test/CpmsCommonTest/"
         },
         "classmap": [
             "./Module.php",
