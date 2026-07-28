@@ -8,7 +8,7 @@
         "laminas/laminas-mvc": "^3.3.0",
         "laminas/laminas-inputfilter": "^2.12",
         "laminas/laminas-servicemanager": "^3.7",
-        "laminas/laminas-log": "^2.13",
+        "dvsa/mot-logger": "^3.3",
         "laminas/laminas-authentication": "^2.8",
         "laminas/laminas-router": "^3.4",
         "laminas/laminas-json": "^3.3",
@@ -26,9 +26,9 @@
         "phpstan/phpstan": "^1.12"
     },
     "autoload": {
-        "psr-0": {
-            "CpmsCommon\\": "src/",
-            "CpmsCommonTest\\": "test/"
+        "psr-4": {
+            "CpmsCommon\\": "src/CpmsCommon/",
+            "CpmsCommonTest\\": "test/CpmsCommonTest/"
         },
         "classmap": [
             "./Module.php",
@@ -46,7 +46,7 @@
             "vendor/bin/phpcbf"
         ],
         "phpstan": [
-            "vendor/bin/phpstan"
+            "vendor/bin/phpstan --memory-limit=512M"
         ]
     },
     "config": {

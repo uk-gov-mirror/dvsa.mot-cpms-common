@@ -54,6 +54,7 @@ return array(
             'cpms\model\test'                          => function () {
                 return 'TEST-MODEL';
             },
+            'Logger'                                  => 'CpmsCommon\Service\LoggerServiceFactory',
             LogDataProviderFactory::AUTH_SERVICE_ALIAS => function () {
                 $testData = array(
                     'accessToken' => TokenGenerator::create(),

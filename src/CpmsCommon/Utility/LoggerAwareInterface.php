@@ -2,16 +2,16 @@
 
 namespace CpmsCommon\Utility;
 
-use CpmsCommon\Service\LoggerService;
-use Laminas\Log\Logger;
+use DvsaLogger\Logger\MotLogger;
+use Monolog\Level;
 
 interface LoggerAwareInterface
 {
-    public function getLogger(): LoggerService;
+    public function getLogger(): MotLogger;
 
-    public function setLogger(LoggerService $logger): self;
+    public function setLogger(MotLogger $logger): self;
 
-    public function log(string $message, int $priority = Logger::INFO, array $extra = array()): void;
+    public function log(string $message, Level|int $priority = Level::Info, array $extra = array()): void;
 
-    public function logException(\Exception $exception): LoggerService;
+    public function logException(\Exception $exception): MotLogger;
 }

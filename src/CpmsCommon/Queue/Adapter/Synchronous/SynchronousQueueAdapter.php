@@ -56,7 +56,7 @@ class SynchronousQueueAdapter implements QueueInterface, LoggerAwareInterface
         try {
             return $job->handle($this->serviceLocator);
         } catch (\Exception $e) {
-            $this->logException($e);
+            $this->getLogger()->error($e->getMessage(), ['ex' => $e]);
             return false;
         }
     }

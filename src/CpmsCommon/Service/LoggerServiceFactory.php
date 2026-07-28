@@ -2,10 +2,14 @@
 
 namespace CpmsCommon\Service;
 
-use CpmsCommon\Log\LogData;
+use DvsaLogger\Contract\IdentityProviderInterface;
+use DvsaLogger\Contract\TokenServiceInterface;
+use DvsaLogger\Formatter\PipeDelimitedFormatter;
 use Psr\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
-use Laminas\Log\Writer\WriterInterface;
+use Monolog\Handler\StreamHandler;
+use Monolog\Level;
+use Monolog\Logger as MonologLogger;
 
 /**
  * Service factory for Common Logger
@@ -28,28 +32,103 @@ class LoggerServiceFactory implements FactoryInterface
      */
     public function __invoke(ContainerInterface $container, $requestedName, array $options = null)
     {
-        $log = new LoggerService();
         /** @var array $serviceConfig */
-        $serviceConfig = $container->get('config');
-        $logData = null;
-        $writers = (array)$serviceConfig['logger']['writers'];
-        $writers = array_unique($writers);
+        $serviceConfig = (array) $container->get('config');
+        $loggerConfig = (array) ($serviceConfig['logger'] ?? []);
 
-        if (!empty($serviceConfig['logger']['replacement'])) {
-            $logData = $container->get($serviceConfig['logger']['replacement']);
+        $location = trim((string) ($loggerConfig['location'] ?? ''));
+        if ($location === '') {
+            $location = 'data/logs';
+        }
+        $location = rtrim($location, '/');
+
+        $filename = trim((string) ($loggerConfig['filename'] ?? ''));
+        if ($filename === '') {
+            $filename = 'cpms-common.log';
         }
 
-        if ($logData and $logData instanceof LogData) {
-            $logData->setStrictMode(false);
-            $log->setLogData($logData);
+        $channel = (string) ($loggerConfig['channel'] ?? 'cpms-common');
+        $path = $location . '/' . ltrim($filename, '/');
+
+        if (!is_dir($location)) {
+            mkdir($location, 0777, true);
         }
 
-        foreach ($writers as $logWriter) {
-            /** @var string|WriterInterface $writer */
-            $writer = $container->get($logWriter);
-            $log->addWriter($writer);
+        if (!file_exists($path)) {
+            touch($path);
         }
 
-        return $log;
+        $level = $this->resolveLevel($loggerConfig['priority'] ?? null);
+
+        $handler = new StreamHandler($path, $level);
+        $handler->setFormatter(new PipeDelimitedFormatter());
+
+        $logger = new MonologLogger($channel);
+        $logger->pushHandler($handler);
+
+        $identityProvider = null;
+        if ($container->has(IdentityProviderInterface::class)) {
+            $candidate = $container->get(IdentityProviderInterface::class);
+            if ($candidate instanceof IdentityProviderInterface) {
+                $identityProvider = $candidate;
+            }
+        }
+
+        $tokenService = null;
+        if ($container->has(TokenServiceInterface::class)) {
+            $candidate = $container->get(TokenServiceInterface::class);
+            if ($candidate instanceof TokenServiceInterface) {
+                $tokenService = $candidate;
+            }
+        }
+
+        $requestUuid = isset($loggerConfig['request_uuid']) && is_string($loggerConfig['request_uuid'])
+            ? $loggerConfig['request_uuid']
+            : null;
+
+        $includeToken = (bool) ($loggerConfig['include_token'] ?? false);
+
+        return new LoggerService(
+            $logger,
+            $identityProvider,
+            $tokenService,
+            $requestUuid,
+            $includeToken,
+        );
+    }
+
+    private function resolveLevel(null|int|string|Level $priority): Level
+    {
+        if ($priority instanceof Level) {
+            return $priority;
+        }
+
+        if (is_string($priority) && $priority !== '') {
+            return match (strtolower($priority)) {
+                'emergency' => Level::Emergency,
+                'alert' => Level::Alert,
+                'critical' => Level::Critical,
+                'error' => Level::Error,
+                'warning' => Level::Warning,
+                'notice' => Level::Notice,
+                'info' => Level::Info,
+                default => Level::Debug,
+            };
+        }
+
+        if (!is_int($priority)) {
+            return Level::Debug;
+        }
+
+        return match ($priority) {
+            0 => Level::Emergency,
+            1 => Level::Alert,
+            2 => Level::Critical,
+            3 => Level::Error,
+            4 => Level::Warning,
+            5 => Level::Notice,
+            6 => Level::Info,
+            default => Level::Debug,
+        };
     }
 }

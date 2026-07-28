@@ -117,7 +117,7 @@ class JsonExceptionStrategy extends ExceptionStrategy
                 $data = $errorService->getErrorMessage($errorCode);
                 /** @var LoggerService $logger */
                 $logger = $serviceLocator->get('Logger');
-                $logger->logException($exception);
+                $logger->error($exception->getMessage(), ['ex' => $exception]);
             } else {
                 $data = array(
                     ErrorCodeService::ERROR_CODE_KEY    => ErrorCodeService::CRITICAL_ERROR,

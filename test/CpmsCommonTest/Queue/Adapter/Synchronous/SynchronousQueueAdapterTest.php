@@ -7,8 +7,9 @@ use CpmsCommon\Queue\JobInterface;
 use CpmsCommon\Service\LoggerService;
 use CpmsCommonTest\Bootstrap;
 use CpmsCommon\Queue\Adapter\Synchronous\SynchronousQueueAdapterFactory;
-use Laminas\Log\Writer\Mock;
 use Laminas\ServiceManager\ServiceManager;
+use Monolog\Handler\NoopHandler;
+use Monolog\Logger as MonologLogger;
 
 class SynchronousQueueAdapterTest extends \PHPUnit\Framework\TestCase
 {
@@ -18,8 +19,7 @@ class SynchronousQueueAdapterTest extends \PHPUnit\Framework\TestCase
     {
         $this->adapter = new SynchronousQueueAdapter();
         $this->adapter->setServiceLocator(new ServiceManager());
-        $logger = new LoggerService();
-        $logger->addWriter(new Mock());
+        $logger = new LoggerService(new MonologLogger('test', [new NoopHandler()]));
         $this->adapter->setLogger($logger);
     }
 

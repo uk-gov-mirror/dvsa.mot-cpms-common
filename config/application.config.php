@@ -2,7 +2,6 @@
 
 return array(
     'modules' => array(
-        'Laminas\Log',
         'Laminas\InputFilter',
         'Laminas\Filter',
         'Laminas\Router',

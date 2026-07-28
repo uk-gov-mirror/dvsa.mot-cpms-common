@@ -1,6 +1,6 @@
 <?php
 
-namespace CpmsCommonTest\Log\Writer;
+namespace CpmsCommonTest\Log;
 
 use CpmsCommon\Log\LogData;
 use CpmsCommon\Utility\TokenGenerator;

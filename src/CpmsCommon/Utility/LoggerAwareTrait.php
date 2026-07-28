@@ -6,9 +6,9 @@
 
 namespace CpmsCommon\Utility;
 
-use CpmsCommon\Service\LoggerService;
-use Laminas\Log\Logger;
+use DvsaLogger\Logger\MotLogger;
 use Laminas\ServiceManager\ServiceManager;
+use Monolog\Level;
 
 /**
  * Class LoggerAwareTrait
@@ -19,29 +19,29 @@ use Laminas\ServiceManager\ServiceManager;
  */
 trait LoggerAwareTrait
 {
-    protected ?LoggerService $logger = null;
+    protected ?MotLogger $logger = null;
 
     /**
-     * Returns an instantiated instance of Zend Log.
+     * Returns an instantiated logger service.
      *
      * @throws \InvalidArgumentException
      */
-    public function getLogger(): LoggerService
+    public function getLogger(): MotLogger
     {
         if (null === $this->logger) {
-            /** @var LoggerService $logger */
+            /** @var MotLogger $logger */
             $logger = $this->getServiceLocator()->get('Logger');
             $this->setLogger($logger);
         }
 
-        /** @var LoggerService */
+        /** @var MotLogger */
         return $this->logger;
     }
 
     /**
      * Set logger object
      */
-    public function setLogger(LoggerService $logger): self
+    public function setLogger(MotLogger $logger): self
     {
         $this->logger = $logger;
 
@@ -51,7 +51,7 @@ trait LoggerAwareTrait
     /**
      * Logs a message to the defined logger.
      */
-    public function log(string $message, int $priority = Logger::INFO, array $extra = array()): void
+    public function log(string $message, Level|int $priority = Level::Info, array $extra = array()): void
     {
         $this->getLogger()->log($priority, $message, $extra);
     }
@@ -61,10 +61,10 @@ trait LoggerAwareTrait
      *
      * @param \Exception $exception
      *
-     * @return LoggerService
+     * @return MotLogger
      */
-    public function logException(\Exception $exception): LoggerService
+    public function logException(\Exception $exception): MotLogger
     {
-        return $this->getLogger()->logException($exception);
+        return $this->getLogger()->error($exception->getMessage(), ['ex' => $exception]);
     }
 }
